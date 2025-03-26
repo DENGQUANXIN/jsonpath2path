@@ -9,7 +9,7 @@ jsonpath2path is a powerful JSON data transformation tool that allows you to man
 - Intuitive path-based syntax for JSON manipulation
 - Support for both value replacement and structural mounting
 - Built-in conversion functions for common transformations
-- Flexible source-target mapping (1:1, N:N, 1:N, N:1)
+- Flexible source-target mapping (`1:1`, `N:N`, `1:N`, `N:1`)
 - List operations with automatic appending for out-of-bound indices
 
 ## Core Concepts
@@ -28,10 +28,10 @@ JSON data is treated as a tree where:
 
 ### Mapping Relationships
 
-1. **1:1**: Direct mapping without transformation
-2. **N:N**: Index-to-index mapping between source and target lists
-3. **1:N**: Source node is duplicated to match multiple targets
-4. **N:1**: Multiple sources are appended/mounted to a single target
+1. `1:1`: Direct mapping without transformation
+2. `N:N`: Index-to-index mapping between source and target lists
+3. `1:N`: Source node is duplicated to match multiple targets
+4. `N:1`: Multiple sources are appended/mounted to a single target
 
 ## Command Syntax
 
@@ -57,63 +57,161 @@ JSON data is treated as a tree where:
 
 ## Built-in Converters
 
-- `v_add`: Add operation
-  - `param1`: Value to add (required)
-  - `param2`: JSONPath for sub-node to add to (optional)
+See the document: [JSON Converter Functions Documentation](./docs/converter.md)
 
-- `sort`: Sorting
-  - `param1`: Boolean for reverse sort
-  - `param2`: JSONPath for sort key sub-node
-
-- `reverse`: Reverse order of elements
+### Usage Notes:
+1. All converters operate on the current node set
+2. Parameters can be:
+   - Literal values (numbers, strings, booleans)
+   - JSONPath expressions (for targeting sub-nodes)
+3. Multiple converters can be chained with `|`
+Here's the updated Examples section that includes both the command syntax and functional API examples:
 
 ## Examples
 
 ### Example Data
 ```json
 {
-  "store": {
-    "book": [
-      {"title": "Book1", "price": 10},
-      {"title": "Book2", "price": 20}
+  "character": {
+    "name": "WarriorX",
+    "race": "Human",
+    "class": "Warrior",
+    "level": 25,
+    "skills": [
+      {
+        "name": "Sword Slash",
+        "damage": 50,
+        "cooldown": 3
+      },
+      {
+        "name": "Shield Bash",
+        "damage": 30,
+        "cooldown": 5
+      }
     ],
-    "bicycle": {
-      "color": "red",
-      "price": 100
+    "equipment": {
+      "weapon": "Great Sword",
+      "armor": "Heavy Plate Armor"
+    },
+    "attributes": {
+      "health": 500,
+      "mana": 100,
+      "strength": 80,
+      "defense": 70
     }
   }
 }
 ```
 
-### Example 1: Add author information
-**Requirement**: Add "Anonymous" as author to all books
+### Addition Operations
 
-**Command**:
-`` `[["author", "Anonymous"]]` => $.store.book[*] ``
+1. **Add new attributes**
+   - Command syntax:
+     ```python
+     `[["agility", 50], ["lucky", 20]]` => $.character.attributes
+     ```
+   - Functional API:
+     ```python
+     (transformer.source([["agility", 50], ["lucky", 20]])
+                  .pick(pick_type=PickType.CREATE)
+                  .assign("$.character.attributes", AssignType.MOUNT)
+                  .to(data))
+     ```
 
-### Example 2: Create author names from titles
-**Requirement**: Set author as "title_author" for each book
+### Deletion Operations
 
-**Command**:
-`@$.store.book[*].title | v_add "_author" -> $.store.book[*].author`
+2. **Remove skills with long cooldowns**
+   - Command syntax:
+     ```python
+     $.character.skills[?(@.cooldown > 4)] ->
+     ```
+   - Functional API:
+     ```python
+     (transformer.source(data)
+                  .pick("$.character.skills[?(@.cooldown > 4)]", PickType.PLUCK))
+     ```
 
-### Example 3: Remove the second book
-**Command**:
-`$.store.book[1]->`
+3. **Clear equipment**
+   - Command syntax:
+     ```python
+     $.character.equipment.* ->
+     ```
+   - Functional API:
+     ```python
+     (transformer.source(data)
+                  .pick("$.character.equipment.*", PickType.PLUCK))
+     ```
 
-### Example 4: Remove expensive books
-**Command**:
-`$.store.book[?(@.price>20)]->`
+### Modification Operations
 
-### Example 5: Sort books by price (descending)
-**Command**:
-`@$.store.book[*] | sort true $.price => $.store.book`
+4. **Adjust skill cooldowns**
+   - Command syntax:
+     ```python
+     $.character.skills[*].cooldown | v_map "lambda v: v+5" => $.character.skills[*]
+     ```
+   - Functional API:
+     ```python
+     (transformer.source(data)
+                  .pick("$.character.skills[*].cooldown", PickType.PLUCK)
+                  .v_map(lambda v: v+5)
+                  .assign("$.character.skills[*]", AssignType.MOUNT)
+                  .to(data))
+     ```
 
-### Example 6: Flatten the store structure
-**Commands**:
-1. `$.store.* => $`
-2. `$.store ->`
+5. **Change character properties**
+   - Command syntax:
+     ```python
+     `[["race", "Elf"]]` -> $.character.race
+     `[["strength", 70], ["mana", 200]]` => $.character.attributes
+     ```
+   - Functional API:
+     ```python
+     (transformer.source([["race", "Elf"]])
+                  .pick(pick_type=PickType.CREATE)
+                  .assign("$.character.race", AssignType.OCCUPY)
+                  .to(data))
+     (transformer.source([["strength", 70], ["mana", 200]])
+                  .pick(pick_type=PickType.CREATE)
+                  .assign("$.character.attributes", AssignType.MOUNT)
+                  .to(data))
+     ```
 
+### Data Movement Operations
+
+6. **Move skills to new document**
+   - Command syntax:
+     ```python
+     $.character.skills => $
+     ```
+   - Functional API:
+     ```python
+     (transformer.source(data)
+                  .pick("$.character.skills", PickType.PLUCK)
+                  .assign("$", AssignType.MOUNT)
+                  .to(to_data))
+     ```
+
+7. **Copy attributes to new document**
+   - Command syntax:
+     ```python
+     @$.character.attributes => $
+     ```
+   - Functional API:
+     ```python
+     (transformer.source(data)
+                  .pick("$.character.attributes", PickType.COPY)
+                  .assign("$", AssignType.MOUNT)
+                  .to(to_data))
+     ```
+
+### Key Features Demonstrated:
+- Both **command syntax** and **functional API** styles
+- **Mounting** (`=>`/`AssignType.MOUNT`) vs **Occupying** (`->`/`AssignType.OCCUPY`) operations
+- Different **pick types** (`PLUCK`, `COPY`, `CREATE`)
+- **Value modification** using converters (`v_add`, `v_set`)
+- **Data movement** between documents
+
+The functional API provides more explicit control over each step of the transformation process, while the command syntax offers a more concise way to express common operations. Both styles can be used interchangeably depending on your preference and use case requirements.
 ## Getting Started
 
 1. Install the package (installation method TBD)

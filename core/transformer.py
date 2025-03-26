@@ -6,9 +6,9 @@ from typing import Callable
 from lark import Lark, Transformer as LarkTransformer
 
 from .assigner import SlotAssigner
-from .constant import AssignType, PickType
+from jsonpath2path.common.constants import AssignType, PickType
 from .converter import NodeConverter, ConverterData
-from .exceptions import InvalidJsonDataError
+from jsonpath2path.common.exceptions import InvalidJsonDataError
 from .picker import NodePicker
 
 bnf = r"""

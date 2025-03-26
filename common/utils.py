@@ -1,13 +1,14 @@
+from __future__ import annotations
+
 import copy
-from copy import deepcopy
 
 from jsonpath_ng import parse, DatumInContext
 
-from .constant import VIRTUAL_ROOT_EDGE
-from .exceptions import *
+from jsonpath2path.common.constants import VIRTUAL_ROOT_EDGE
+from jsonpath2path.common.exceptions import *
 
 
-def new_match(edge, node):
+def new_match(edge: int|str, node: any) -> DatumInContext:
     if isinstance(edge, str):
         return parse(f"$.{edge}").find({edge: node})[0]
     tmp_list = [None for _ in range(edge)] + [node]
@@ -34,9 +35,13 @@ def get_node(match: DatumInContext) -> dict | list | None:
 def get_path(match: DatumInContext) -> str:
     return match.full_path
 
-def add_virtual_root(data: dict | list, path: str) -> (dict | list, str):
-    path = f"{path[0]}.{VIRTUAL_ROOT_EDGE}{path[1:]}"
-    return {VIRTUAL_ROOT_EDGE: data}, path
+def add_virtual_root(data: dict | list=None, jsonpath: str | None=None):
+    if data is not None and jsonpath is not None:
+        return {VIRTUAL_ROOT_EDGE: data}, f"{jsonpath[0]}.{VIRTUAL_ROOT_EDGE}{jsonpath[1:]}"
+    if data is not None:
+        return {VIRTUAL_ROOT_EDGE: data}
+    if jsonpath is not None:
+        return f"{jsonpath[0]}.{VIRTUAL_ROOT_EDGE}{jsonpath[1:]}"
 
 def get_real_data(data: dict | list) -> dict | list | None:
     if VIRTUAL_ROOT_EDGE in data:
@@ -46,10 +51,6 @@ def get_real_data(data: dict | list) -> dict | list | None:
 def is_root(match: DatumInContext) -> bool:
     return match.context is None
 
-def del_node(data: dict | list, match: DatumInContext) -> None:
-    if is_root(match): # Root node can only be cleared.
-        match.value = deepcopy(match.value)
-        data.clear()
-    else:
-        edge = get_edge(match)
-        match.context.value.pop(edge)
+def unlink(match: DatumInContext) -> None:
+    edge = get_edge(match)
+    match.context.value.pop(edge)
