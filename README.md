@@ -4,6 +4,8 @@
 
 jsonpath2path is a powerful JSON data transformation tool that allows you to manipulate JSON structures using a simple yet expressive syntax. Inspired by JSONPath expressions, this tool provides advanced capabilities for modifying JSON data through path-based operations.
 
+Refer to the document for the principle: [JSON Path to Path](./docs/JSON%20Path%20to%20Path.pdf)
+
 ## Key Features
 
 - Intuitive path-based syntax for JSON manipulation
