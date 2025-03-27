@@ -39,7 +39,7 @@ class CleanCommand(Command):
 
 setup(
     name="jsonpath2path",
-    version="0.1.1",
+    version="0.1.0",
     author="DENGQUANXIN",
     author_email="2507120731@qq.com",
     description="jsonpath2path - JSON Data Transformation Tool.",

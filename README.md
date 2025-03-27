@@ -14,6 +14,21 @@ Refer to the document for the principle: [JSON Path to Path](./docs/JSON%20Path%
 - Flexible source-target mapping (`1:1`, `N:N`, `1:N`, `N:1`)
 - List operations with automatic appending for out-of-bound indices
 
+## Getting Started
+- **Install**
+```shell
+pip install --upgrade jsonpath2path
+```
+- **Usage**
+
+```python
+from jsonpath2path import CommandTransformer
+from jsonpath2path.examples.example_data import game_character as data
+
+# Add 5 to the cooldown of all skills.
+CommandTransformer().source(data).by('$.character.skills[*].cooldown | v_map "lambda v: v+5" => $.character.skills[*]').to(data)
+```
+
 ## Core Concepts
 
 ### JSON as a Tree Structure
@@ -214,11 +229,6 @@ Here's the updated Examples section that includes both the command syntax and fu
 - **Data movement** between documents
 
 The functional API provides more explicit control over each step of the transformation process, while the command syntax offers a more concise way to express common operations. Both styles can be used interchangeably depending on your preference and use case requirements.
-## Getting Started
-
-1. Install the package (installation method TBD)
-2. Import the module in your code
-3. Use the `transform_json` function with your JSON data and transformation commands
 
 ## Contribution
 
